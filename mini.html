@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Earn a Life — Mini Game 2</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --life-size:50px; --board-w:86vw; --board-h:54vh; --r:22px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:'Poppins',system-ui,Arial;
+    color:#fff;
+    overflow-x:hidden;
+    background:url("images/Mini%20Game%20Background.png") center/cover no-repeat fixed;
+  }
+
+  /* NAV – same layout as game.html */
+  .nav{
+    position:relative; z-index:3;
+    display:grid; grid-template-columns:1fr auto 1fr; align-items:center;
+    padding:12px 20px; background:rgba(247,191,89,.22); backdrop-filter:blur(2px);
+  }
+  .lives{display:flex;gap:4px;align-items:center}
+  .life{width:var(--life-size);height:var(--life-size);object-fit:contain}
+  .score{text-align:center;font-weight:900;font-size:clamp(1.1rem,2.3vw,1.7rem)}
+  .user-actions{justify-self:end;display:flex;gap:12px;align-items:center}
+  .username{font-weight:800}
+  .logout{
+    border:0;cursor:pointer;color:#fff;background:#4b5a2c;font-weight:900;
+    padding:10px 16px;border-radius:12px;box-shadow:0 2px 6px rgba(0,0,0,.28);
+  }
+  .logout:hover{transform:translateY(-1px);filter:brightness(1.05)}
+
+  .levels-icon{
+    position:absolute;top:74px;right:22px;width:66px;height:66px;cursor:pointer;
+    transition:transform .15s ease, filter .15s ease;
+  }
+  .levels-icon:hover{transform:scale(1.08);filter:brightness(1.06)}
+
+  /* BOARD */
+  .mini-wrap{position:relative;margin:40px auto;width:min(var(--board-w),1200px)}
+  .board-title{
+    width:max-content;margin:0 auto 14px;padding:10px 22px;
+    background:#7b3f10;border-radius:16px;font-weight:900;
+    box-shadow:0 6px 0 #0002
+  }
+  .board-title img{width:28px;vertical-align:middle;margin-left:8px}
+  .board{
+    position:relative;width:100%;height:var(--board-h);border-radius:var(--r);
+    background:rgba(22,46,28,.75);overflow:hidden;
+  }
+  .board.locked::before{
+    content:"";position:absolute;inset:0;
+    backdrop-filter:blur(3px);background:#0002;z-index:2;
+  }
+  .start-btn{
+    position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:3;
+    border:0;border-radius:18px;cursor:pointer;padding:14px 28px;
+    background:#ff9f2c;color:#3b2103;font-weight:900;font-size:1.2rem;
+    box-shadow:0 3px 0 #0002;
+  }
+  .sky{position:absolute;inset:6px 6px 62px;overflow:hidden}
+  .basket{
+    position:absolute;bottom:10px;left:50%;transform:translateX(-50%);
+    width:90px;filter:drop-shadow(0 2px 6px #0007);user-select:none
+  }
+  .banana{position:absolute;width:50px;filter:drop-shadow(0 2px 6px #0008)}
+
+  .hud-bar{display:flex;justify-content:space-between;margin-top:12px}
+  .badge{
+    display:flex;gap:12px;align-items:center;
+    padding:14px 22px;background:#7b3f10;border-radius:16px;
+    box-shadow:0 6px 0 #0002
+  }
+  .badge img{width:34px;height:34px}
+
+  /* overlay */
+  .overlay{
+    position:fixed;inset:0;background:rgba(0,0,0,.45);
+    display:none;align-items:center;justify-content:center;z-index:10
+  }
+  .panel{animation:pop .18s ease}
+  @keyframes pop{from{transform:scale(.93);opacity:0}to{transform:scale(1);opacity:1}}
+  .alert-img{width:min(520px,80vw);display:block;margin:0 auto 16px}
+  .row{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+  .cta{
+    border:0;border-radius:26px;color:#fff;font-weight:900;
+    padding:12px 26px;box-shadow:0 2px 6px #0005;cursor:pointer
+  }
+  .main{background:#36B24A}
+  .orange{background:#ff9f2c}
+  .red{background:#e63946}
+</style>
+</head>
+<body>
+  <!-- NAV -->
+  <nav class="nav">
+    <div class="lives" id="lives"></div>
+    <div class="score">Score - <span id="score">00</span></div>
+    <div class="user-actions">
+      <div class="username" id="username">User Name</div>
+      <button class="logout" id="logoutBtn">Logout</button>
+    </div>
+  </nav>
+
+  <img src="images/Levels%20icon.png" class="levels-icon" id="levelsBtn" alt="Levels"/>
+
+  <!-- BOARD -->
+  <section class="mini-wrap">
+    <h2 class="board-title">
+      Earn a Life <img src="images/Life.png" alt="">
+    </h2>
+    <div class="board locked" id="board">
+      <button class="start-btn" id="startBtn">Start</button>
+      <div class="sky" id="sky"></div>
+      <img id="basket" class="basket" src="images/Basket.png" alt="Basket">
+    </div>
+    <div class="hud-bar">
+      <div class="badge">
+        <img src="images/Score%20fruit.png" alt="">
+        <span id="caughtLbl">Score - 0/10</span>
+      </div>
+      <div class="badge">
+        <img src="images/Timer%20icon.png" alt="">
+        <span id="timerLbl">00:30</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- overlay -->
+  <div class="overlay" id="overlay">
+    <div class="panel" id="panel"></div>
+  </div>
+
+  <!-- click sfx -->
+  <audio id="sfxClick" src="assets/sounds/click.mp3" preload="auto"></audio>
+
+<script>
+const API = 'api/';
+
+const $  = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+
+const livesBox   = $('#lives');
+const scoreSpan  = $('#score');
+const usernameEl = $('#username');
+
+const board  = $('#board');
+const sky    = $('#sky');
+const basket = $('#basket');
+const startBtn = $('#startBtn');
+
+const overlay = $('#overlay');
+const panel   = $('#panel');
+
+const sfxClick  = $('#sfxClick');
+
+let user   = null;
+let score  = 0;
+let lives  = 3;
+
+let playing    = false;
+let spawnTimer = null;
+let secTimer   = null;
+
+let timeLeft = 30;
+let target   = 10;
+let caught   = 0;
+let basketX  = 0;
+
+// --------------- NAV HELPERS ----------------
+function renderLives(){
+  livesBox.innerHTML = '';
+  for (let i = 0; i < lives; i++){
+    const img = new Image();
+    img.src = 'images/Life.png';
+    img.className = 'life';
+    img.alt = 'life';
+    livesBox.appendChild(img);
+  }
+}
+function updateScoreNav(){
+  scoreSpan.textContent = String(score).padStart(2,'0');
+}
+function renderNavUser(){
+  usernameEl.textContent = user?.username || 'User Name';
+}
+
+// --------------- HUD ----------------
+function setHud(){
+  $('#caughtLbl').textContent = `Score - ${caught}/${target}`;
+  $('#timerLbl').textContent  = `00:${String(timeLeft).padStart(2,'0')}`;
+}
+function lockBoard(lock){
+  if (lock){
+    board.classList.add('locked');
+    startBtn.style.display = 'inline-block';
+  } else {
+    board.classList.remove('locked');
+    startBtn.style.display = 'none';
+  }
+}
+
+// --------------- LOAD USER (same source as game.html) ----------------
+async function loadMe(){
+  try{
+    const r = await fetch(API + 'me.php', {cache:'no-store'});
+    if (r.ok){
+      const js = await r.json();
+      if (js.ok){
+        user  = js.user;
+        const st = js.state || {};
+        score = parseInt(st.score  ?? 0);
+        lives = parseInt(st.lives  ?? 3);
+        if (isNaN(lives) || lives < 0) lives = 0;
+        if (lives > 3) lives = 3;
+      }
+    }
+  }catch(e){}
+  renderNavUser();
+  renderLives();
+  updateScoreNav();
+}
+
+// --------------- MOVEMENT ----------------
+function clamp(x,min,max){return Math.max(min,Math.min(max,x));}
+
+function moveBasketToPageX(pageX){
+  const rect = board.getBoundingClientRect();
+  const x = clamp(pageX - rect.left, 40, rect.width - 40);
+  basket.style.left = x + 'px';
+  basketX = x;
+}
+
+board.addEventListener('mousemove', e => {
+  if (!playing) return;
+  moveBasketToPageX(e.clientX);
+});
+
+window.addEventListener('keydown', e => {
+  if (!playing) return;
+  const step = (e.shiftKey ? 24 : 16);
+  const rect = board.getBoundingClientRect();
+  if (['ArrowLeft','a','A'].includes(e.key)){
+    moveBasketToPageX(rect.left + basketX - step);
+  }
+  if (['ArrowRight','d','D'].includes(e.key)){
+    moveBasketToPageX(rect.left + basketX + step);
+  }
+});
+
+// --------------- ROUND CONTROL ----------------
+async function startRound(){
+  try{sfxClick.play().catch(()=>{});}catch(e){}
+
+  // Ask backend for target + time + current state
+  try{
+    const r = await fetch(API + 'mini_start.php', {method:'POST'});
+    if (r.ok){
+      const js = await r.json();
+      if (js.ok){
+        target   = js.target  ?? target;
+        timeLeft = js.seconds ?? timeLeft;
+        if (js.state){
+          lives = js.state.lives ?? lives;
+          score = js.state.score ?? score;
+          renderLives();
+          updateScoreNav();
+        }
+      }
+    }
+  }catch(e){}
+
+  caught = 0;
+  setHud();
+  lockBoard(false);
+  playing = true;
+
+  const rect = board.getBoundingClientRect();
+  moveBasketToPageX(rect.left + rect.width / 2);
+
+  spawnTimer = setInterval(spawnBanana, 600);
+  clearInterval(secTimer);
+  secTimer = setInterval(() => {
+    timeLeft--;
+    setHud();
+    if (timeLeft <= 0){
+      finish(false, 'timeout');
+    }
+  }, 1000);
+}
+
+function spawnBanana(){
+  const b = new Image();
+  b.src = 'images/Banana.png';
+  b.className = 'banana';
+  sky.appendChild(b);
+
+  const skyRect = sky.getBoundingClientRect();
+  const x = Math.random() * (skyRect.width - 60) + 6;
+  b.style.left = x + 'px';
+  b.style.top  = '-60px';
+
+  const dur   = 3500 + Math.random()*2000;
+  const start = performance.now();
+
+  function step(now){
+    if (!playing){
+      b.remove();
+      return;
+    }
+    const y = (now - start)/dur * (skyRect.height + 60);
+    b.style.transform = `translateY(${y}px)`;
+
+    // simple collision with basket
+    const bx = basketX;
+    const by = skyRect.height - 30;
+    const bw = 90;
+    const bh = 40;
+    const bx1 = bx - bw/2;
+    const bx2 = bx + bw/2;
+    const by1 = by - 40;
+    const by2 = by + bh;
+
+    const rect = b.getBoundingClientRect();
+    const relX = rect.left - skyRect.left + rect.width/2;
+    const relY = rect.top  - skyRect.top  + rect.height;
+
+    if (relX > bx1 && relX < bx2 && relY > by1 && relY < by2){
+      b.remove();
+      caught++;
+      setHud();
+      if (caught >= target){
+        finish(true);
+      }
+      return;
+    }
+
+    if ((now - start) < dur){
+      requestAnimationFrame(step);
+    } else {
+      b.remove();
+    }
+  }
+  requestAnimationFrame(step);
+}
+
+async function finish(success, reason){
+  if (!playing) return;
+  playing = false;
+  clearInterval(spawnTimer);
+  clearInterval(secTimer);
+  spawnTimer = null;
+  secTimer   = null;
+  $$('.banana').forEach(el => el.remove());
+  lockBoard(true);
+
+  // Inform backend so it can reward +1 life (max 3)
+  let newState = null;
+  try{
+    const r = await fetch(API + 'mini_finish.php', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ success, caught })
+    });
+    if (r.ok){
+      const js = await r.json();
+      if (js.state){
+        newState = js.state;
+      }
+    }
+  }catch(e){}
+
+  if (newState){
+    lives = newState.lives ?? lives;
+    score = newState.score ?? score;
+    if (isNaN(lives) || lives < 0) lives = 0;
+    if (lives > 3) lives = 3;
+    renderLives();
+    updateScoreNav();
+  }
+
+  if (success){
+    panel.innerHTML = `
+      <img class="alert-img" src="images/Earned%20life.png" alt="Earned life">
+      <div class="row">
+        <button class="cta main"   id="goGame">Main Game</button>
+        <button class="cta orange" id="again">Play Again</button>
+      </div>
+    `;
+    overlay.style.display = 'flex';
+    $('#goGame').onclick = () => location.href = 'game.html';
+    $('#again').onclick  = () => { overlay.style.display = 'none'; };
+  } else {
+    const img = (reason === 'timeout') ? 'images/Time%20out.png' : 'images/Lost.png';
+    panel.innerHTML = `
+      <img class="alert-img" src="${img}" alt="Try again">
+      <div class="row">
+        <button class="cta orange" id="retry">Try Again</button>
+        <button class="cta red"    id="back">Back</button>
+      </div>
+    `;
+    overlay.style.display = 'flex';
+    $('#retry').onclick = () => { overlay.style.display = 'none'; };
+    $('#back').onclick  = () => location.href = 'levels.html';
+  }
+}
+
+// --------------- NAV BUTTONS ----------------
+$('#logoutBtn').onclick = async () => {
+  try{ await fetch(API + 'logout.php', {method:'POST'}); }catch(e){}
+  location.href = 'auth.html';
+};
+$('#levelsBtn').onclick = () => location.href = 'levels.html';
+$('#startBtn').onclick  = startRound;
+
+// --------------- INIT ----------------
+(async () => {
+  lockBoard(true);
+  await loadMe();
+  setHud();
+})();
+</script>
+</body>
+</html>

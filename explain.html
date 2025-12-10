@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Banana Logic Hunt – How to Play</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800;900&display=swap" rel="stylesheet">
+
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      font-family:'Poppins',system-ui,Arial;
+      color:#fff;
+      overflow-x:hidden;
+    }
+
+    /* PAGE BACKGROUND */
+    .page{
+      min-height:100vh;
+      position:relative;
+      background:url("images/Explain screen.png") center/cover no-repeat fixed;
+    }
+    .page::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:rgba(0,0,0,.05);
+      pointer-events:none;
+      opacity: 0.8;
+    }
+
+    /* TOP NAV – same style as game.html */
+    .nav{
+      position:relative;
+      z-index:5;
+      display:grid;
+      grid-template-columns:1fr auto 1fr;
+      align-items:center;
+      padding:12px 20px;
+      background:rgba(247,191,89,0.30);
+      backdrop-filter:blur(2px);
+    }
+
+    .lives{display:flex;gap:4px;align-items:center}
+    .life{
+      width:50px;
+      height:50px;
+      object-fit:contain;
+    }
+
+    .score{
+      text-align:center;
+      font-weight:900;
+      font-size:clamp(1.2rem,2.4vw,1.7rem);
+      text-shadow:0 2px 4px rgba(0,0,0,.35);
+    }
+
+    .user-actions{
+      display:flex;
+      gap:12px;
+      align-items:center;
+      justify-self:end;
+    }
+    .username{
+      font-weight:800;
+      text-shadow:0 2px 4px rgba(0,0,0,.35);
+    }
+    .logout{
+      border:0;
+      cursor:pointer;
+      color:#fff;
+      background:#4b5a2c;
+      font-weight:900;
+      padding:10px 18px;
+      border-radius:16px;
+      box-shadow:0 2px 6px rgba(0,0,0,.28);
+      transition:transform .12s ease, filter .12s ease;
+    }
+    .logout:hover{transform:translateY(-1px);filter:brightness(1.06)}
+
+    .levels-icon{
+      position:absolute;
+      right:22px;
+      top:74px;
+      z-index:5;
+      width:66px;
+      height:66px;
+      cursor:pointer;
+      transition:transform .15s ease, filter .15s ease;
+    }
+    .levels-icon:hover{transform:scale(1.06);filter:brightness(1.06)}
+
+    /* MAIN AREA */
+    .content{
+      position:relative;
+      z-index:3;
+      min-height:calc(100vh - 72px);
+      padding:30px 20px 40px;
+    }
+
+    /* common bubble + teacher styles */
+    .teacher{
+      width:300px;
+      max-height:520px;
+      object-fit:contain;
+    }
+
+    .bubble{
+      position:relative;
+      background:#285327;
+      border-radius:26px;
+      padding:22px 26px;
+      box-shadow:0 10px 26px rgba(0,0,0,.35);
+      max-width:460px;
+    }
+    .bubble::after{
+      content:"";
+      position:absolute;
+      border-style:solid;
+    }
+
+    .bubble-title{
+      font-size:1.1rem;
+      font-weight:800;
+      margin-bottom:8px;
+      color:#ffe969;
+    }
+    .bubble-text{
+      font-size:0.98rem;
+      line-height:1.6;
+      min-height:4.5em;
+      white-space:pre-line;
+    }
+
+    /* TOP-LEFT GROUP */
+    .group-top-left{
+      position:absolute;
+      left:7%;
+      top:18%;
+      display:flex;
+      align-items:flex-start;
+      gap:18px;
+    }
+    .group-top-left .bubble::after{
+      bottom:-22px;
+      left:60px;
+      border-width:22px 18px 0 0;
+      border-color:#285327 transparent transparent transparent;
+    }
+
+    /* BOTTOM-RIGHT GROUP */
+    .group-bottom-right{
+      position:absolute;
+      right:7%;
+      bottom:10%;
+      display:flex;
+      align-items:flex-end;
+      gap:18px;
+    }
+    .group-bottom-right .bubble::after{
+      bottom:-22px;
+      right:60px;
+      border-width:22px 0 0 18px;
+      border-color:#285327 transparent transparent transparent;
+    }
+
+    /* PLAY BUTTON (under 2nd board) */
+    .play-btn{
+      border:0;
+      cursor:pointer;
+      margin-top:18px;
+      padding:14px 60px;
+      border-radius:40px;
+      font-size:1.2rem;
+      font-weight:900;
+      background:linear-gradient(180deg,#ffb339,#ff8f1a);
+      color:#fff;
+      box-shadow:0 12px 26px rgba(0,0,0,.35);
+      text-shadow:0 2px 4px rgba(0,0,0,.35);
+      transition:transform .12s ease, filter .12s ease;
+    }
+    .play-btn:hover{transform:translateY(-2px);filter:brightness(1.05)}
+    .play-btn:active{transform:translateY(1px);box-shadow:0 6px 18px rgba(0,0,0,.4)}
+
+    /* RESPONSIVE */
+    @media (max-width:1100px){
+      .group-top-left,
+      .group-bottom-right{
+        position:static;
+        margin:25px auto;
+        justify-content:center;
+      }
+      .content{
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+        padding-top:110px;
+      }
+      .teacher{display:none;} /* hide banana teachers on very small screens */
+      .bubble::after{
+        bottom:-18px !important;
+        left:50% !important;
+        right:auto !important;
+        border-width:18px 16px 0 16px !important;
+        border-color:#285327 transparent transparent transparent !important;
+        transform:translateX(-50%);
+      }
+    }
+  </style>
+</head>
+<body class="page">
+
+  <!-- NAV BAR (same structure as game.html) -->
+  <nav class="nav">
+    <div class="lives" id="lives"></div>
+    <div class="score">Score - <span id="score">0</span></div>
+    <div class="user-actions">
+      <div class="username" id="username">User Name</div>
+      <button class="logout" id="logoutBtn">Logout</button>
+    </div>
+  </nav>
+
+  <!-- Levels icon -->
+  <img src="images/Levels icon.png" alt="Levels" class="levels-icon" id="levelsIcon">
+
+  <!-- MAIN CONTENT -->
+  <main class="content">
+    <!-- TOP-LEFT: How to Play -->
+    <section class="group-top-left">
+      <img src="images/Female teacher.png" alt="Teacher" class="teacher">
+      <div class="bubble">
+        <div class="bubble-title">How to Play</div>
+        <div class="bubble-text" id="text1"></div>
+      </div>
+    </section>
+
+    <!-- BOTTOM-RIGHT: Lives & Mini Game + Play button -->
+    <section class="group-bottom-right">
+      <div>
+        <div class="bubble">
+          <div class="bubble-title">Lives &amp; Mini Game</div>
+          <div class="bubble-text" id="text2"></div>
+        </div>
+        <button class="play-btn" id="playGameBtn">Play Game</button>
+      </div>
+      <img src="images/Male teacher.png" alt="Guide" class="teacher">
+    </section>
+  </main>
+
+  <script>
+    const API_BASE = 'api/';
+
+    const $  = s => document.querySelector(s);
+
+    // ---- NAV: load user, score, lives ----
+    async function loadUser() {
+      try {
+        const res = await fetch(API_BASE + 'me.php', { cache:'no-store' });
+        if (!res.ok) {
+          // if not logged in, send back to login
+          window.location.href = 'auth.html';
+          return;
+        }
+        const { user, state } = await res.json();
+        $('#username').textContent = user.username;
+        $('#score').textContent = state.score ?? 0;
+
+        const lives = parseInt(state.lives ?? 3, 10);
+        const livesBox = $('#lives');
+        livesBox.innerHTML = '';
+        for (let i = 0; i < lives; i++) {
+          const img = document.createElement('img');
+          img.src = 'images/Life.png';
+          img.alt = 'Life';
+          img.className = 'life';
+          livesBox.appendChild(img);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    // logout
+    $('#logoutBtn').addEventListener('click', async () => {
+      try { await fetch(API_BASE + 'logout.php', { method: 'POST' }); } catch(e){}
+      window.location.href = 'auth.html';
+    });
+
+    // levels icon → levels page
+    $('#levelsIcon').addEventListener('click', () => {
+      window.location.href = 'levels.html';
+    });
+
+    // play game button → main banana game
+    $('#playGameBtn').addEventListener('click', () => {
+      window.location.href = 'game.html';
+    });
+
+    // ---- Typing animation for messages ----
+    const msg1 = "Solve each banana puzzle before time runs out. Tap the number you think is correct to move to the next level.";
+    const msg2 = "You start with three hearts. Wrong answers or timeouts lose a heart. If you run out, play the mini game to win one life and continue.";
+
+    function typeText(el, text, speed) {
+      el.textContent = "";
+      let i = 0;
+      const id = setInterval(() => {
+        el.textContent += text.charAt(i);
+        i++;
+        if (i >= text.length) clearInterval(id);
+      }, speed);
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      loadUser();
+      typeText($('#text1'), msg1, 35);
+      setTimeout(() => typeText($('#text2'), msg2, 35), 800);
+    });
+  </script>
+</body>
+</html>

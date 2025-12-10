@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Banana Logic Hunt — Login</title>
+
+  <!-- Same chunky display font -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css"/>
+</head>
+<body class="scene scene--bg">
+
+  <!-- Sound controls -->
+  <button id="muteToggle" class="mute-btn" aria-label="Toggle sound" title="Sound on/off">🔊</button>
+  <audio id="bgm"   src="assets/sounds/bgm.mp3"   loop preload="auto"></audio>
+  <audio id="click" src="assets/sounds/click.mp3" preload="auto"></audio>
+
+  <!-- Title -->
+  <header class="topbar">
+    <h1 class="title">Login</h1>
+  </header>
+
+  <!-- Centered login card -->
+  <main class="center">
+    <!-- kept class="card" for same UI -->
+    <form id="loginForm" class="card" autocomplete="off">
+      <label class="field">
+        <span>Username :-</span>
+        <!-- added name for completeness (doesn’t change UI) -->
+        <input type="text" id="username" name="username"
+               placeholder="Your username" required/>
+      </label>
+
+      <label class="field">
+        <span>Password :-</span>
+        <input type="password" id="password" name="password"
+               placeholder="Your password" required/>
+      </label>
+
+      <button type="submit" class="banana-btn">Login</button>
+
+      <p class="hint">
+        If you didn’t register yet, please
+        <a href="register.html" class="register-link">register here</a>.
+      </p>
+    </form>
+  </main>
+
+  <!-- Center toast -->
+  <div id="toast" class="toast" aria-live="polite"></div>
+
+  <script>
+    // ===== Audio (same as other pages) =====
+    const bgm     = document.getElementById('bgm');
+    const clickFx = document.getElementById('click');
+    const muteBtn = document.getElementById('muteToggle');
+
+    let muted = localStorage.getItem('muted') === 'true';
+    bgm.muted = muted; bgm.volume = 0.35;
+    muteBtn.textContent = muted ? '🔇' : '🔊';
+
+    const enableAudioOnce = () => {
+      if (!muted) bgm.play().catch(()=>{});
+      document.removeEventListener('click', enableAudioOnce);
+      document.removeEventListener('keydown', enableAudioOnce);
+    };
+    document.addEventListener('click', enableAudioOnce);
+    document.addEventListener('keydown', enableAudioOnce);
+
+    muteBtn.addEventListener('click', ()=>{
+      muted = !muted; bgm.muted = muted;
+      muteBtn.textContent = muted ? '🔇' : '🔊';
+      localStorage.setItem('muted', String(muted));
+      if (!muted) bgm.play().catch(()=>{});
+    });
+
+    function playClick(){ try{ clickFx.cloneNode().play(); }catch(e){} }
+
+    // ===== Toast helpers =====
+    const toast = document.getElementById('toast');
+    function showToast(msg, ok=false){
+      toast.textContent = msg;
+      toast.className = 'toast ' + (ok ? 'ok' : 'err');
+      toast.style.display = 'block';
+      setTimeout(()=> toast.style.display = 'none', 1500);
+    }
+
+    // ===== REAL login logic (calls api/login.php) =====
+    document.getElementById('loginForm').addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      playClick();
+
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+
+      if (!username || !password) {
+        showToast('Please enter username and password');
+        return;
+      }
+
+      try {
+        const res = await fetch('api/login.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ login: username, password })
+        });
+
+        let data = {};
+        try {
+          data = await res.json();
+        } catch (e) {
+          // if JSON failed, treat as error
+          showToast('Server error. Please try again');
+          return;
+        }
+
+        if (!data.ok) {
+          // invalid credentials or other error
+          showToast('Invalid username or password');
+          const card = document.querySelector('.card');
+          if (card) {
+            card.classList.add('shake');
+            setTimeout(()=> card.classList.remove('shake'), 350);
+          }
+          return;
+        }
+
+        // success: save username for navbar etc.
+        localStorage.setItem('session_user', data.username || username);
+
+        showToast('Login successful!', true);
+        // ✅ redirect to explain.html first
+        setTimeout(()=> { window.location.href = 'explain.html'; }, 900);
+
+      } catch (err) {
+        console.error(err);
+        showToast('Server error. Please try again');
+      }
+    });
+  </script>
+</body>
+</html>

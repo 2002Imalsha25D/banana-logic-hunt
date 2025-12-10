@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Banana Logic Hunt — Register</title>
+
+  <!-- Same chunky font -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css"/>
+</head>
+<body class="scene scene--bg">
+
+  <!-- Sound controls -->
+  <button id="muteToggle" class="mute-btn" aria-label="Toggle sound" title="Sound on/off">🔊</button>
+  <audio id="bgm"   src="assets/sounds/bgm.mp3"   loop preload="auto"></audio>
+  <audio id="click" src="assets/sounds/click.mp3" preload="auto"></audio>
+
+  <!-- Title at top -->
+  <header class="topbar">
+    <h1 class="title">Register</h1>
+  </header>
+
+  <!-- Centered card -->
+  <main class="center">
+    <!-- keep same classes for UI -->
+    <form id="regForm" class="card" autocomplete="off">
+      <label class="field">
+        <span>Email :-</span>
+        <!-- ✅ added name="email" -->
+        <input type="email" id="email" name="email"
+               placeholder="you@example.com" required/>
+      </label>
+
+      <label class="field">
+        <span>Create a Username :-</span>
+        <!-- ✅ added name="username" -->
+        <input type="text" id="username" name="username"
+               placeholder="Username" minlength="3" required/>
+      </label>
+
+      <label class="field">
+        <span>Create a Password :-</span>
+        <!-- ✅ added name="password" -->
+        <input type="password" id="password" name="password"
+               placeholder="Min 8 chars incl. number" required/>
+      </label>
+
+      <label class="field">
+        <span>Confirm Password :-</span>
+        <!-- ✅ added name="confirm" -->
+        <input type="password" id="confirm" name="confirm"
+               placeholder="Re-enter password" required/>
+      </label>
+
+      <button type="submit" class="banana-btn">Register</button>
+
+      <p class="hint">
+        Password must be at least 8 characters and include a letter and a number.
+      </p>
+    </form>
+  </main>
+
+  <!-- toast in middle -->
+  <div id="toast" class="toast" aria-live="polite"></div>
+
+  <script>
+    // ---------- AUDIO ----------
+    const bgm     = document.getElementById('bgm');
+    const clickS  = document.getElementById('click');
+    const muteBtn = document.getElementById('muteToggle');
+
+    let muted = localStorage.getItem('muted') === 'true';
+    bgm.muted  = muted;
+    bgm.volume = 0.35;
+    muteBtn.textContent = muted ? '🔇' : '🔊';
+
+    const enableAudioOnce = () => {
+      if (!muted) bgm.play().catch(() => {});
+      document.removeEventListener('click', enableAudioOnce);
+      document.removeEventListener('keydown', enableAudioOnce);
+    };
+    document.addEventListener('click', enableAudioOnce);
+    document.addEventListener('keydown', enableAudioOnce);
+
+    muteBtn.addEventListener('click', () => {
+      muted = !muted;
+      bgm.muted = muted;
+      muteBtn.textContent = muted ? '🔇' : '🔊';
+      localStorage.setItem('muted', String(muted));
+      if (!muted) bgm.play().catch(() => {});
+    });
+
+    function clickFx() {
+      try { clickS.cloneNode().play(); } catch(e) {}
+    }
+
+    // ---------- TOAST ----------
+    const toast = document.getElementById('toast');
+    function showToast(msg, ok = false) {
+      toast.textContent   = msg;
+      toast.className     = 'toast ' + (ok ? 'ok' : 'err');
+      toast.style.display = 'block';
+      setTimeout(() => toast.style.display = 'none', 1400);
+    }
+
+    // ---------- VALIDATION HELPERS ----------
+    function validEmail(v) {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+    }
+    function validPassword(v) {
+      return /[A-Za-z]/.test(v) && /\d/.test(v) && v.length >= 8;
+    }
+
+    // ---------- FORM SUBMIT ----------
+    document.addEventListener('DOMContentLoaded', () => {
+      const form = document.getElementById('regForm');
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        clickFx();
+
+        const fd = new FormData(form);
+        let email    = (fd.get('email')    || '').trim();
+        let username = (fd.get('username') || '').trim();
+        let password = (fd.get('password') || '').trim();
+        let confirm  = (fd.get('confirm')  || '').trim();
+
+        // simple client-side checks (extra safety)
+        if (!validEmail(email)) {
+          showToast('Please enter a valid email address.'); 
+          return;
+        }
+        if (!validPassword(password)) {
+          showToast('Password must be 8+ chars with letters & numbers.');
+          return;
+        }
+        if (password !== confirm) {
+          showToast('Passwords do not match.');
+          return;
+        }
+
+        const payload = { email, username, password, confirm };
+
+        try {
+          const res = await fetch('api/register.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+
+          const data = await res.json();
+
+          if (!data.ok) {
+            alert('Registration failed: ' + (data.msg || 'unknown'));
+            console.log('Register error:', data);
+            return;
+          }
+
+          alert('Registration successful! You can now log in.');
+          window.location.href = 'login.html';
+        } catch (err) {
+          console.error(err);
+          alert('Network error while registering.');
+        }
+      });
+    });
+  </script>
+</body>
+</html>

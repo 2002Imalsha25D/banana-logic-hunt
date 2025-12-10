@@ -1,0 +1,191 @@
+/* === Nav Bar === */
+body {
+  font-family: 'Poppins', system-ui, Arial, sans-serif;
+  color: #fff;
+  overflow-x: hidden;
+}
+
+.nav{
+  position:relative; 
+  z-index:3;
+  display:grid; 
+  grid-template-columns:1fr auto 1fr; 
+  align-items:center;
+  padding:12px 20px; 
+  background:rgba(247, 191, 89, 0.22); 
+  backdrop-filter:blur(2px);
+}
+
+.lives{
+  display:flex; 
+  gap:4px; 
+  align-items:center;
+}
+.life{
+  width:50px; 
+  height:50px; 
+  object-fit:contain;
+}
+
+.score{
+  text-align:center; 
+  font-weight:900; 
+  font-size:clamp(1.1rem,2.3vw,1.7rem);
+}
+
+.user-actions{
+  display:flex; 
+  gap:12px; 
+  align-items:center; 
+  justify-self:end;
+}
+.username{font-weight:800}
+.logout{
+  border:0; 
+  cursor:pointer; 
+  color:#fff; 
+  background:#4b5a2c;
+  font-weight:900; 
+  padding:10px 16px; 
+  border-radius:12px;
+  box-shadow:0 2px 6px rgba(0,0,0,.28);
+  transition:transform .12s ease, filter .12s ease;
+}
+.logout:hover{transform:translateY(-1px);filter:brightness(1.05)}
+
+.levels-icon{
+  position:absolute; 
+  z-index:3; 
+  top:74px; 
+  right:22px;
+  width:66px; 
+  height:66px; 
+  cursor:pointer;
+  transition:transform .15s ease, filter .15s ease;
+}
+.levels-icon:hover{
+  transform:scale(1.08); 
+  filter:brightness(1.06);
+}
+
+/* Make page fill the viewport */
+html, body {
+  height: 100%;
+}
+
+/* Full-screen blurred background (behind everything) */
+body::before {
+  content: "";
+  position: fixed;      /* stays put while scrolling */
+  inset: 0;             /* top:0; right:0; bottom:0; left:0 */
+  background: url("../images/Mini%20Game%20Background.png") center / cover no-repeat;
+  filter: blur(4px) saturate(105%); /* soft blur like your UI */
+  transform: scale(1.03);           /* compensates blur edge crop */
+  z-index: -2;                      /* behind all content */
+}
+
+/* Optional: a subtle dark overlay to match your UI contrast */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.18);     /* tweak to taste */
+  z-index: -1;
+}
+
+.mute-btn {
+  border: none;
+  background: none;
+  font-size: 1.6rem;
+  color: #fff;
+  cursor: pointer;
+  transition: transform .15s ease;
+}
+.mute-btn:hover {
+  transform: scale(1.1);
+}
+
+:root{
+  --ribbon:#7a3a17;
+  --panel:rgba(36,62,24,.86);
+  --shadow:rgba(0,0,0,.25);
+  --orange:#ffb23d; --orange-s:#c58a27;
+  --green:#56c178;  --green-s:#3c9b59;
+}
+
+/* Board: no outer shadow */
+.mg-board{
+  width:min(1120px,92vw);
+  height:min(560px,70vh);
+  margin:90px auto 0;
+  position:relative;
+  background:var(--panel);
+  border-radius:24px;
+  overflow:hidden;
+  color:#fff;
+  font-family:"Baloo 2", system-ui, ui-rounded, sans-serif;
+  text-shadow:0 1px 0 rgba(0,0,0,.4);
+}
+
+/* Ribbon with very short shadow */
+.mg-title{
+  position:absolute; top:-22px; left:50%; transform:translateX(-50%);
+  display:flex; align-items:center; gap:10px;
+  background:var(--ribbon); padding:8px 20px; border-radius:16px;
+  font-weight:800; font-size:28px;
+  box-shadow:0 3px 0 var(--shadow);
+}
+.mg-title img{width:30px;height:30px}
+
+/* Field area */
+.mg-field{ position:absolute; inset:42px 22px 78px; border-radius:18px; overflow:hidden; }
+
+/* Veil (blur) – Start button sits ABOVE this using z-index */
+.mg-veil{
+  position:absolute; inset:0; background:rgba(0,0,0,.25);
+  backdrop-filter:blur(3px);
+  z-index:1;              /* below Start button */
+  pointer-events:none;    /* never block clicks */
+}
+
+/* Bananas & basket layers  */
+.mg-basket{
+  position:absolute; bottom:10px; left:50%; transform:translateX(-50%);
+  width:120px; z-index:2; pointer-events:auto; touch-action:none;
+  filter: drop-shadow(0 4px 0 var(--shadow));
+}
+.banana{
+  position:absolute; width:46px; z-index:0; user-select:none;
+  filter: drop-shadow(0 3px 0 var(--shadow));
+}
+
+/* Start button: small shadow, always visible */
+.mg-start{
+  position:absolute; inset:0; margin:auto; width:190px; height:56px;
+  border:none; border-radius:18px; cursor:pointer;
+  background:var(--orange); color:#2b1a00; font-weight:800; font-size:26px;
+  z-index:3;                    /* above veil */
+  box-shadow:0 4px 0 var(--orange-s);
+}
+
+/* HUD badges with tiny shadows */
+.mg-hud{
+  position:absolute; left:0; right:0; bottom:16px;
+  display:flex; justify-content:space-between; padding:0 16px;
+}
+.mg-badge{
+  display:flex; align-items:center; gap:10px;
+  background:var(--ribbon); padding:10px 18px; border-radius:16px;
+  font-weight:800; font-size:24px; box-shadow:0 3px 0 var(--shadow);
+}
+.mg-badge img{width:30px; height:30px}
+
+/* Modal (lightweight) */
+.mg-modal.hidden{display:none}
+.mg-dim{position:fixed; inset:0; background:rgba(0,0,0,.45)}
+.mg-card{position:fixed; inset:0; display:grid; place-items:center}
+.mg-card img{width:min(560px,72vw); filter:drop-shadow(0 6px 0 var(--shadow))}
+.mg-actions{display:flex; gap:14px; margin-top:12px}
+.mg-btn{border:none; padding:10px 22px; border-radius:16px; font-weight:800; font-size:20px; cursor:pointer; text-decoration:none; color:#261800}
+.mg-btn-orange{background:var(--orange); box-shadow:0 3px 0 var(--orange-s)}
+.mg-btn-green {background:var(--green);  box-shadow:0 3px 0 var(--green-s)}

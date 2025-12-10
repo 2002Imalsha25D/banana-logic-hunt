@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Banana Logic Hunt — Levels</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700;800;900&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --life-size: 50px;
+    --board-max: 980px;
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{font-family:'Poppins',system-ui,Arial;color:#fff;overflow-x:hidden}
+
+  /* Background */
+  .page{
+    min-height:100vh; position:relative;
+    background:url("images/Levels background.png") center/cover no-repeat fixed;
+  }
+  .page::after{content:""; position:absolute; inset:0; background:rgba(0,0,0,.10)}
+
+  /* === NAV (copied from game.html) === */
+  .nav{
+    position:relative; z-index:3;
+    display:grid; grid-template-columns:1fr auto 1fr; align-items:center;
+    padding:12px 20px; background:rgba(247, 191, 89, 0.22); backdrop-filter:blur(2px);
+  }
+  .lives{display:flex; gap:4px; align-items:center}
+  .life{width:var(--life-size); height:var(--life-size); object-fit:contain}
+  .score{text-align:center; font-weight:900; font-size:clamp(1.1rem,2.3vw,1.7rem)}
+  .user-actions{display:flex; gap:12px; align-items:center; justify-self:end}
+  .username{font-weight:800}
+  .logout{
+    border:0; cursor:pointer; color:#fff; background:#4b5a2c;
+    font-weight:900; padding:10px 16px; border-radius:12px;
+    box-shadow:0 2px 6px rgba(0,0,0,.28);
+    transition:transform .12s ease, filter .12s ease;
+  }
+  .logout:hover{transform:translateY(-1px);filter:brightness(1.05)}
+
+  .mini-icon{
+    position:absolute; z-index:3; top:74px; left:22px;
+    width:66px; height:66px; cursor:pointer;
+    transition:transform .15s ease, filter .15s ease;
+  }
+  .mini-icon:hover{transform:scale(1.08); filter:brightness(1.06)}
+
+  /* Board container */
+  .boardWrap{
+    position:relative; z-index:2;
+    max-width:var(--board-max); margin:22px auto 26px;
+    padding:26px 26px 90px;
+    background:rgba(94, 151, 47, 0.35); border-radius:26px;
+    box-shadow:0 10px 30px rgba(0,0,0,.25);
+  }
+  .title{
+    display:inline-block; margin:0 auto 16px; padding:10px 34px;
+    color:#fff; font-weight:900; letter-spacing:.8px;
+    background:#ffbf42; border-radius:26px; box-shadow:0 6px 0 rgba(0,0,0,.25);
+    position:relative; left:50%; transform:translateX(-50%);
+  }
+
+  /* Left mascot */
+  .mascot{
+    position:absolute; left:-110px; bottom:-10px; width:160px; height:auto;
+    pointer-events:none; user-select:none;
+  }
+
+  /* Grid of levels */
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(5, 1fr);
+    gap:28px 54px;
+    justify-items:center;
+    align-items:center;
+    margin-top:8px;
+    padding:10px 6px;
+  }
+
+  .level{
+    position:relative; width:110px; height:110px; cursor:pointer;
+    transition:transform .12s ease, filter .12s ease;
+  }
+  .level .token{
+    position:absolute; inset:0;
+    background:url("images/Levels.png") center/contain no-repeat;
+  }
+  .level .num{
+    position:absolute; left:50%; top:53%;
+    transform:translate(-50%,-50%);
+    font-weight:900; color:#2f5f1e;
+    font-size:1.5rem; text-shadow:0 2px 6px rgba(0,0,0,.15);
+  }
+  .level .mark{
+    position:absolute; right:-2px; top:-6px; width:44px; height:44px;
+    background-size:contain; background-repeat:no-repeat; background-position:center;
+  }
+  .level:hover { transform:translateY(-2px); filter:brightness(1.05) }
+
+  .locked { filter:grayscale(.6) opacity(.75); cursor:not-allowed }
+  .locked:hover{ transform:none; filter:grayscale(.6) opacity(.75) }
+
+  /* Bottom buttons */
+  .actions{
+    display:flex; gap:40px; justify-content:center;
+    position:absolute; left:0; right:0; bottom:20px;
+  }
+  .cta{
+    font-family:'Poppins',sans-serif; font-weight:900; color:#fff;
+    padding:14px 0; width:240px; border:none; border-radius:26px; cursor:pointer;
+    box-shadow:0 6px 0 rgba(0,0,0,.25); transition:transform .12s ease, filter .12s ease;
+    font-size:1.1rem;
+  }
+  .cta.play { background:#ff9f2c }
+  .cta.back { background:#4b5a2c }
+  .cta:hover{ transform:translateY(-2px); filter:brightness(1.07) }
+  .cta:active{ transform:translateY(1px) }
+
+  @media (max-width:1200px){
+    .boardWrap{ margin-left:40px; margin-right:40px }
+    .mascot{ left:-90px; width:140px }
+  }
+  @media (max-width:980px){
+    .grid{ grid-template-columns:repeat(4, 1fr); gap:24px 30px }
+    .mascot{ display:none }
+  }
+  @media (max-width:720px){
+    .grid{ grid-template-columns:repeat(3, 1fr) }
+  }
+</style>
+</head>
+<body class="page">
+
+  <!-- sounds -->
+  <audio id="bgm"   src="assets/sounds/bgm2.mp3" loop preload="auto"></audio>
+  <audio id="click" src="assets/sounds/click.mp3" preload="auto"></audio>
+
+  <!-- Top bar -->
+  <nav class="nav">
+    <div class="lives" id="lives"></div>
+    <div class="score">Score - <span id="score">0</span></div>
+    <div class="user-actions">
+      <div class="username" id="username">User Name</div>
+      <button class="logout" id="logoutBtn">Logout</button>
+    </div>
+  </nav>
+
+  <!-- mini-game icon (same position as game.html) -->
+  <img src="images/Mini game icon.png" class="mini-icon" alt="Mini Game" id="miniIcon"/>
+
+  <!-- Board -->
+  <section class="boardWrap">
+    <img class="mascot" src="images/Levels Man.png" alt="Levels Banana"/>
+    <h2 class="title">LEVELS</h2>
+
+    <div class="grid" id="levelsGrid"></div>
+
+    <div class="actions">
+      <button class="cta play" id="playAgain">Play Again</button>
+      <button class="cta back" id="goBack">Back</button>
+    </div>
+  </section>
+
+<script>
+  const API_BASE = 'api/';
+  const $  = s => document.querySelector(s);
+
+  // --------- audio ----------
+  const bgm   = $('#bgm');
+  const click = $('#click');
+  let muted   = localStorage.getItem('muted') === 'true';
+  bgm.muted   = muted;
+  bgm.volume  = 0.35;
+
+  const enableBgmOnce = () => {
+    if (!muted) bgm.play().catch(()=>{});
+    document.removeEventListener('click', enableBgmOnce);
+    document.removeEventListener('keydown', enableBgmOnce);
+  };
+  document.addEventListener('click', enableBgmOnce);
+  document.addEventListener('keydown', enableBgmOnce);
+
+  function sfx(){ try{ click.cloneNode().play(); }catch(e){} }
+
+  // --------- global state from backend ----------
+  let lives = 3;
+  let score = 0;
+  let currentLevel = 1;
+  let highestLevel = 1;
+  const TOTAL_LEVELS = 15;
+
+  // --------- helpers ----------
+  function renderLives(){
+    const box = $('#lives');
+    box.innerHTML = '';
+    for (let i = 0; i < lives; i++){
+      const img = document.createElement('img');
+      img.src = 'images/Life.png';
+      img.alt = 'life';
+      img.className = 'life';
+      box.appendChild(img);
+    }
+  }
+
+  function updateScore(){
+    $('#score').textContent = String(score).padStart(2,'0');
+  }
+
+  async function setCurrentLevel(level){
+    // update in DB so game.html starts from this level
+    try {
+      const res = await fetch(API_BASE + 'state.php', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ action:'set_level', level })
+      });
+      const data = await res.json();
+      if (!data.ok) {
+        console.error('state.php set_level error:', data);
+      }
+    } catch (e) {
+      console.error('state.php network error:', e);
+    }
+  }
+
+  function buildLevelsGrid(){
+    const grid = $('#levelsGrid');
+    grid.innerHTML = '';
+
+    // levels 1..highest are "done"
+    // next level (highest+1) is unlocked (if within range)
+    const maxUnlocked = Math.min(highestLevel + 1, TOTAL_LEVELS);
+
+    for (let i = 1; i <= TOTAL_LEVELS; i++){
+      const div = document.createElement('div');
+      const isDone     = (i <= highestLevel);             // already completed
+      const isUnlocked = (i <= maxUnlocked);              // can click
+
+      div.className = 'level' + (isUnlocked ? '' : ' locked');
+      div.dataset.level = i;
+
+      // marker image: done ✓ / lock 🔒 / none
+      let markImg = '';
+      if (isDone) {
+        markImg = 'images/Level done.png';
+      } else if (!isUnlocked) {
+        markImg = 'images/Levels is lock.png';
+      }
+
+      div.innerHTML = `
+        <div class="token"></div>
+        <div class="num">${i}</div>
+        <div class="mark" style="${markImg ? `background-image:url('${markImg}')` : ''}"></div>
+      `;
+
+      if (isUnlocked){
+        div.addEventListener('click', async () => {
+          sfx();
+          await setCurrentLevel(i);
+          window.location.href = 'game.html';
+        });
+      }
+
+      grid.appendChild(div);
+    }
+  }
+
+  // --------- load user + progress from PHP ----------
+  async function loadUserAndState(){
+    try {
+      const res = await fetch(API_BASE + 'me.php', { cache:'no-store' });
+      if (!res.ok) {
+        window.location.href = 'auth.html';
+        return;
+      }
+      const data = await res.json();
+      if (!data.ok) {
+        window.location.href = 'auth.html';
+        return;
+      }
+
+      const user  = data.user  || {};
+      const state = data.state || {};
+
+      const uname =
+        user.username ||
+        user.name ||
+        data.username ||
+        localStorage.getItem('session_user') ||
+        'Player';
+
+      $('#username').textContent = uname;
+
+      lives        = parseInt(state.lives          ?? 3);
+      score        = parseInt(state.score          ?? 0);
+      currentLevel = parseInt(state.current_level  ?? 1);
+      highestLevel = parseInt(state.highest_level  ?? currentLevel);
+
+      if (isNaN(lives) || lives < 0) lives = 0;
+      if (isNaN(score) || score < 0) score = 0;
+      if (isNaN(currentLevel) || currentLevel < 1) currentLevel = 1;
+      if (isNaN(highestLevel) || highestLevel < 1) highestLevel = 1;
+
+      // If highest_level somehow less than current, fix it in memory
+      if (highestLevel < currentLevel) highestLevel = currentLevel;
+
+      renderLives();
+      updateScore();
+      buildLevelsGrid();
+    } catch (e) {
+      console.error('me.php error in levels:', e);
+      window.location.href = 'auth.html';
+    }
+  }
+
+  // --------- buttons / nav ----------
+  document.getElementById('logoutBtn').addEventListener('click', async () => {
+    sfx();
+    try { await fetch(API_BASE + 'logout.php', { method:'POST' }); } catch(e){}
+    localStorage.removeItem('session_user');
+    window.location.href = 'auth.html';
+  });
+
+  document.getElementById('playAgain').addEventListener('click', async () => {
+    sfx();
+    // go to next unlocked level (or 1)
+    const next = Math.min(highestLevel + 1, TOTAL_LEVELS);
+    await setCurrentLevel(next);
+    window.location.href = 'game.html';
+  });
+
+  document.getElementById('goBack').addEventListener('click', () => {
+    sfx();
+    window.location.href = 'game.html';
+  });
+
+  // mini-game icon → just go to mini-game selector / main mini.html
+  document.getElementById('miniIcon').addEventListener('click', () => {
+    sfx();
+    window.location.href = 'mini.html';
+  });
+
+  // --------- init ----------
+  (async function init(){
+    await loadUserAndState();
+  })();
+</script>
+</body>
+</html>
